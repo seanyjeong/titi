@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>일산맥스 의류주문</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/light.min.css">
+    <style>
+        body {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .product {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .product img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.2s;
+        }
+
+        .product img:hover {
+            transform: scale(1.1);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .overlay img {
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        input[type="tel"], input[type="text"] {
+            width: 200px;
+            padding: 8px;
+            margin: 5px auto;
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        #cart {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        #cart li {
+            margin: 10px 0;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        button {
+            margin: 5px;
+        }
+
+        select {
+            text-align: center;
+            margin: 5px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>👕 맥스 의류 주문</h1>
+
+    <label>주문자 이름: <input type="text" id="customerName"></label>
+    <label>전화번호: <input type="tel" id="phoneNumber" placeholder="'-' 없이 숫자만 입력 (예: 01012345678)" maxlength="11"></label>
+
+    <h2>📦 상품 목록</h2>
+    <div id="products"></div>
+
+    <h2>🛒 장바구니</h2>
+    <ul id="cart"></ul>
+    <button onclick="submitOrder()">📩 주문하기</button>
+
+    <div class="overlay" id="imageOverlay" onclick="closeOverlay()">
+        <img id="overlayImage">
+    </div>
+
+    <script>
+        const products = [
+            { id: 1, name: "맥스하라노랑", price: 13000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EB%A7%A5%EC%8A%A4%ED%95%98%EB%9D%BC%EB%85%B8%EB%9E%91.jpeg?raw=true" },
+            { id: 2, name: "TTM 핑크반팔", price: 13000, img: "https://github.com/seanyjeong/newilsan/blob/main/%ED%8B%B0%ED%8B%B0%EC%97%A0.jpeg?raw=true" },
+            { id: 3, name: "흰색맥스반팔", price: 12000, img: "https://github.com/seanyjeong/newilsan/blob/main/%ED%9D%B0%EC%83%89%EB%A7%A5%EC%8A%A4%ED%8B%B0.jpeg?raw=true" },
+            { id: 4, name: "아카데미반팔", price: 14000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EC%95%84%EC%B9%B4%EB%8D%B0%EB%AF%B8%EB%B0%98%ED%8C%94.jpeg?raw=true" },
+            { id: 5, name: "곤색반팔", price: 12000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EB%B0%98%ED%8C%94%EA%B3%A4%EC%83%89.jpeg?raw=true" },
+            { id: 6, name: "맨투맨검정", price: 27000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EB%A7%A8%ED%88%AC%EB%A7%A8%EA%B2%80%EC%A0%95.jpeg?raw=true" },
+            { id: 7, name: "맨투맨회색", price: 27000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EB%A7%A8%ED%88%AC%EB%A7%A8%ED%9A%8C%EC%83%89.jpeg?raw=true" },
+            { id: 8, name: "후리스검정", price: 45000, img: "https://github.com/seanyjeong/newilsan/blob/main/%ED%9B%84%EB%A6%AC%EC%8A%A4%EA%B2%80%EC%A0%95.jpeg?raw=true" },
+            { id: 9, name: "후리스차콜", price: 45000, img: "https://github.com/seanyjeong/newilsan/blob/main/%ED%9B%84%EB%A6%AC%EC%8A%A4%EC%B0%A8%EC%BD%9C.jpeg?raw=true" },
+            { id: 10, name: "스판긴팔검정", price: 25000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EC%8A%A4%ED%8C%90%EA%B8%B4%ED%8C%94%EA%B2%80%EC%A0%95.jpeg?raw=true" },
+            { id: 11, name: "스판긴팔흰색", price: 25000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EC%8A%A4%ED%8C%90%EA%B8%B4%ED%8C%94%ED%9D%B0%EC%83%89.jpeg?raw=true" },
+            { id: 12, name: "바람막이검정", price: 40000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EB%B0%94%EB%9E%8C%EB%A7%89%EC%9D%B4%EA%B2%80%EC%A0%95.jpeg?raw=true" },
+            { id: 13, name: "바람막이흰색", price: 40000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EB%B0%94%EB%9E%8C%EB%A7%89%EC%9D%B4%ED%9D%B0%EC%83%89.jpeg?raw=true"}
+        ];
+
+        const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
+        let cart = [];
+
+        // 전화번호 입력 필드에 숫자만 입력되도록 제한
+        document.getElementById('phoneNumber').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        function renderProducts() {
+            const container = document.getElementById("products");
+            container.innerHTML = "";
+            products.forEach(product => {
+                const div = document.createElement("div");
+                div.classList.add("product");
+                div.innerHTML = `
+                    <h3>${product.name} - ${product.price.toLocaleString()}원</h3>
+                    <img src="${product.img}" alt="${product.name}" onclick="openOverlay('${product.img}')">
+                    <label>사이즈 선택:
+                        <select id="size-${product.id}">
+                            ${sizes.map(size => `<option value="${size}">${size}</option>`).join("")}
+                        </select>
+                    </label>
+                    <button onclick="addToCart(${product.id})">➕ 장바구니 추가</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openOverlay(imageSrc) {
+            document.getElementById("overlayImage").src = imageSrc;
+            document.getElementById("imageOverlay").style.display = "flex";
+        }
+
+        function closeOverlay() {
+            document.getElementById("imageOverlay").style.display = "none";
+        }
+
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            const size = document.getElementById(`size-${product.id}`).value;
+            cart.push({ name: product.name, size, price: product.price });
+            updateCart();
+            alert(`✅ ${product.name} (${size}) 상품이 장바구니에 담겼습니다!`);
+        }
+
+        function updateCart() {
+            const cartList = document.getElementById("cart");
+            cartList.innerHTML = "";
+            cart.forEach((item, index) => {
+                const li = document.createElement("li");
+                li.textContent = `${item.name} (${item.size}) - ${item.price.toLocaleString()}원`;
+                const removeBtn = document.createElement("button");
+                removeBtn.textContent = "❌";
+                removeBtn.onclick = () => { cart.splice(index, 1); updateCart(); };
+                li.appendChild(removeBtn);
+                cartList.appendChild(li);
+            });
+        }
+
+        function submitOrder() {
+            const customerName = document.getElementById("customerName").value.trim();
+            const phoneNumber = document.getElementById("phoneNumber").value.trim();
+            
+            if (!customerName) {
+                alert("주문자 이름을 입력하세요!");
+                return;
+            }
+
+            if (!phoneNumber || phoneNumber.length !== 11) {
+                alert("올바른 전화번호를 입력하세요! (예: 01012345678)");
+                return;
+            }
+
+            if (cart.length === 0) {
+                alert("장바구니가 비어 있습니다!");
+                return;
+            }
+
+            const totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
+            const orderSummary = cart.length > 1 
+                ? `${cart[0].name} 외 ${cart.length - 1}개`
+                : cart[0].name;
+
+            fetch("https://script.google.com/macros/s/AKfycbxYYr8WU2Fb55E0mh-v0AzewQJNdTonwWxJim8MbQlRbXIWCaW0mNYYM4umlk75gms/exec", {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    customerName, 
+                    phoneNumber,
+                    orders: cart,
+                    totalAmount,
+                    orderSummary
+                })
+            });
+
+            alert("✅ 주문이 접수되었습니다!");
+            cart = [];
+            updateCart();
+            document.getElementById("customerName").value = "";
+            document.getElementById("phoneNumber").value = "";
+        }
+
+        renderProducts();
+    </script>
+</body>
+</html>
