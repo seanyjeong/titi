@@ -94,7 +94,7 @@
 
     <h2>📦 상품 목록</h2>
     <div id="products"></div>
-    <h2>🎉 이벤트 상품 (신청기간: 25/3/20 목 오전 11시까지)</h2>
+    <h2>🎉 이벤트 상품 (신청기간: 25/3/23 까지)</h2>
 <div id="event-products"></div>
 
     <h2>🛒 장바구니</h2>
@@ -127,43 +127,43 @@
         const sizes = ["S", "M", "L", "XL", "2XL", "3XL"];
         let cart = [];
 
-    //     const eventProducts = [
-    //     { id: 14, name: "화이트 언더레이어", price: 15000, img: "https://github.com/seanyjeong/newilsan/blob/main/%ED%99%94%EC%9D%B4%ED%8A%B8%EC%96%B8%EB%8D%94%EB%A0%88%EC%9D%B4%EC%96%B4.jpeg?raw=true", type: "상의" },
-    //     { id: 15, name: "검정 언더레이어", price: 15000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EA%B2%80%EC%A0%95%EC%96%B8%EB%8D%94%EB%A0%88%EC%9D%B4%EC%96%B4.jpeg?raw=true", type: "상의" },
-    //     { id: 16, name: "검정 언더레이어 하의", price: 15000, img: "", type: "하의" }
-    // ];
+        const eventProducts = [
+        { id: 14, name: "화이트 언더레이어", price: 15000, img: "https://github.com/seanyjeong/newilsan/blob/main/%ED%99%94%EC%9D%B4%ED%8A%B8%EC%96%B8%EB%8D%94%EB%A0%88%EC%9D%B4%EC%96%B4.jpeg?raw=true", type: "상의" },
+        { id: 15, name: "검정 언더레이어", price: 15000, img: "https://github.com/seanyjeong/newilsan/blob/main/%EA%B2%80%EC%A0%95%EC%96%B8%EB%8D%94%EB%A0%88%EC%9D%B4%EC%96%B4.jpeg?raw=true", type: "상의" },
+        { id: 16, name: "검정 언더레이어 하의", price: 15000, img: "", type: "하의" }
+    ];
     
-    // function renderEventProducts() {
-    //     const eventContainer = document.getElementById("event-products");
-    //     eventContainer.innerHTML = "";
-    //     eventProducts.forEach(product => {
-    //         const div = document.createElement("div");
-    //         div.classList.add("product");
-    //         div.innerHTML = `
-    //             <h3>${product.name} - ${product.price.toLocaleString()}원</h3>
-    //             ${product.img ? `<img src="${product.img}" alt="${product.name}" onclick="openOverlay('${product.img}')">` : "<p>이미지 없음</p>"}
-    //             <label>사이즈 선택:
-    //                 <select id="size-${product.id}">
-    //                     ${product.type === "상의" ? sizes.map(size => `<option value="${size}">${size}</option>`).join("") : ["S", "M", "L", "XL", "2XL"].map(size => `<option value="${size}">${size}</option>`).join("")}
-    //                 </select>
-    //             </label>
-    //             <button onclick="addToCart(${product.id})">➕ 장바구니 추가</button>
-    //         `;
-    //         eventContainer.appendChild(div);
-    //     });
-    // }
+    function renderEventProducts() {
+        const eventContainer = document.getElementById("event-products");
+        eventContainer.innerHTML = "";
+        eventProducts.forEach(product => {
+            const div = document.createElement("div");
+            div.classList.add("product");
+            div.innerHTML = `
+                <h3>${product.name} - ${product.price.toLocaleString()}원</h3>
+                ${product.img ? `<img src="${product.img}" alt="${product.name}" onclick="openOverlay('${product.img}')">` : "<p>이미지 없음</p>"}
+                <label>사이즈 선택:
+                    <select id="size-${product.id}">
+                        ${product.type === "상의" ? sizes.map(size => `<option value="${size}">${size}</option>`).join("") : ["S", "M", "L", "XL", "2XL"].map(size => `<option value="${size}">${size}</option>`).join("")}
+                    </select>
+                </label>
+                <button onclick="addToCart(${product.id})">➕ 장바구니 추가</button>
+            `;
+            eventContainer.appendChild(div);
+        });
+    }
     
-    // function checkEventDeadline() {
-    //     const deadline = new Date("2025-03-20T02:00:00Z"); // 한국 시간으로 오전 11시 (UTC+9 → UTC+0 기준 변환)
-    //     const now = new Date();
-    //     if (now > deadline) {
-    //         document.getElementById("event-products").parentElement.style.display = "none";
-    //     } else {
-    //         renderEventProducts();
-    //     }
-    // }
+    function checkEventDeadline() {
+        const deadline = new Date("2025-03-23T02:00:00Z"); // 한국 시간으로 오전 11시 (UTC+9 → UTC+0 기준 변환)
+        const now = new Date();
+        if (now > deadline) {
+            document.getElementById("event-products").parentElement.style.display = "none";
+        } else {
+            renderEventProducts();
+        }
+    }
     
-    // checkEventDeadline();
+    checkEventDeadline();
 
         // 전화번호 입력 필드에 숫자만 입력되도록 제한
         document.getElementById('phoneNumber').addEventListener('input', function(e) {
