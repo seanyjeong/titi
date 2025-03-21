@@ -154,7 +154,7 @@
     }
     
     function checkEventDeadline() {
-        const deadline = new Date("2025-03-23T02:00:00Z"); // 한국 시간으로 오전 11시 (UTC+9 → UTC+0 기준 변환)
+        const deadline = new Date("2025-03-23T14:00:00Z"); // 한국 시간으로 오전 11시 (UTC+9 → UTC+0 기준 변환)
         const now = new Date();
         if (now > deadline) {
             document.getElementById("event-products").parentElement.style.display = "none";
