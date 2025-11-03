@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 - 상품/재고 관리</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    
     <style>
         :root {
             --primary: #4361ee;
@@ -342,9 +345,14 @@
 
         <div class="page-header" style="margin-top: 40px;">
              <h2 class="page-title">2. 현재 재고 수정 (입고 처리)</h2>
-             <button class="btn btn-outline" onclick="fetchInventory()">
-                <i class="fas fa-sync-alt"></i> 새로고침
-             </button>
+             <div style="display: flex; gap: 10px;">
+                 <button class="btn btn-outline" onclick="fetchInventory()">
+                    <i class="fas fa-sync-alt"></i> 새로고침
+                 </button>
+                 <button class="btn btn-success" onclick="exportToExcel()">
+                    <i class="fas fa-file-excel"></i> 엑셀로 저장
+                 </button>
+             </div>
         </div>
         
         <div class="tab-nav">
@@ -788,6 +796,126 @@
             fetchInventory();
             setDefaultSizes();
         });
+        
+        // ⬇️⬇️⬇️ [수정] 14. 엑셀(XLSX)로 저장 (카테고리별 시트 분리) ⬇️⬇️⬇️
+        function exportToExcel() {
+            if (Object.keys(groupedByProduct).length === 0) {
+                alert('먼저 재고 데이터를 불러와주세요.');
+                return;
+            }
+
+            // --- 1단계: 카테고리별로 데이터 분리 ---
+            const clothingProducts = {};
+            const shoesProducts = {};
+            const clothingSizeHeaders = new Set();
+            const shoesSizeHeaders = new Set();
+
+            for (const productId in groupedByProduct) {
+                const product = groupedByProduct[productId];
+                if (product.category === 'clothing') {
+                    clothingProducts[productId] = product;
+                    product.sizes.forEach(item => clothingSizeHeaders.add(item.size));
+                } else if (product.category === 'shoes') {
+                    shoesProducts[productId] = product;
+                    product.sizes.forEach(item => shoesSizeHeaders.add(item.size));
+                }
+            }
+
+            // --- 2단계: 각 카테고리별로 시트 데이터 생성 (헬퍼 함수) ---
+            const createSheetData = (products, sizeHeaders) => {
+                const sortedSizes = Array.from(sizeHeaders).sort(sortSizes);
+                const dataForSheet = [];
+
+                // 제품명으로 정렬
+                const sortedProductIds = Object.keys(products).sort((a, b) => {
+                    return products[a].product_name.localeCompare(products[b].product_name);
+                });
+
+                for (const productId of sortedProductIds) {
+                    const product = products[productId];
+                    const rowObject = {};
+                    const totalStock = product.sizes.reduce((sum, s) => sum + s.stock_quantity, 0);
+
+                    const sizeStockMap = new Map();
+                    product.sizes.forEach(s => sizeStockMap.set(s.size, s.stock_quantity));
+
+                    // 엑셀 열 순서
+                    rowObject["제품명"] = product.product_name.replace(/,/g, " ");
+                    rowObject["총 재고"] = totalStock;
+
+                    sortedSizes.forEach(sizeHeader => {
+                        rowObject[sizeHeader] = sizeStockMap.get(sizeHeader) || 0;
+                    });
+                    
+                    dataForSheet.push(rowObject);
+                }
+                return dataForSheet;
+            };
+
+            const clothingSheetData = createSheetData(clothingProducts, clothingSizeHeaders);
+            const shoesSheetData = createSheetData(shoesProducts, shoesSizeHeaders);
+
+            // --- 3단계: SheetJS로 엑셀 파일 생성 (시트 2개) ---
+            const wb = XLSX.utils.book_new(); // 새 워크북
+
+            if (clothingSheetData.length > 0) {
+                const ws_clothing = XLSX.utils.json_to_sheet(clothingSheetData);
+                XLSX.utils.book_append_sheet(wb, ws_clothing, "의류 재고"); // "의류 재고" 시트
+            }
+            
+            if (shoesSheetData.length > 0) {
+                const ws_shoes = XLSX.utils.json_to_sheet(shoesSheetData);
+                XLSX.utils.book_append_sheet(wb, ws_shoes, "신발 재고"); // "신발 재고" 시트
+            }
+
+            if (wb.SheetNames.length === 0) {
+                alert('엑셀로 내보낼 데이터가 없습니다.');
+                return;
+            }
+
+            // --- 4단계: 파일 다운로드 (파일 이름 수정) ---
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+            const filename = `일산맥스_재고_${date}.xlsx`; // [수정] 파일 이름
+            
+            XLSX.writeFile(wb, filename);
+        }
+
+        // 15. [유지] 엑셀 헤더용 사이즈 정렬 함수
+        function sortSizes(a, b) {
+            const sizeOrder = {
+                'S': 1, 'M': 2, 'L': 3,
+                'XL': 4, '2XL': 5, '3XL': 6, '4XL': 7, '5XL': 8
+                // '90', '95' 등은 의류지만 숫자로 취급되도록 냅둠
+            };
+            
+            // 대소문자 구분 없이 처리
+            const ua = String(a).toUpperCase();
+            const ub = String(b).toUpperCase();
+            
+            const aIsNumeric = !isNaN(a);
+            const bIsNumeric = !isNaN(b);
+            const aIsClothing = sizeOrder[ua];
+            const bIsClothing = sizeOrder[ub];
+
+            // 1. 순수 의류 사이즈 (S, M, L)
+            if (aIsClothing && bIsClothing) {
+                return aIsClothing - bIsClothing;
+            }
+            // 2. 숫자 사이즈 (90, 95, 250, 255)
+            if (aIsNumeric && bIsNumeric) {
+                return Number(a) - Number(b);
+            }
+            // 3. 순수 의류 vs 숫자 (S vs 90, S vs 250)
+            if (aIsClothing && bIsNumeric) {
+                return -1; // 의류가 숫자보다 먼저
+            }
+            if (aIsNumeric && bIsClothing) {
+                return 1; // 숫자가 의류보다 나중
+            }
+            
+            // 4. 기타 (예: 'FREE' 사이즈 등)
+            return String(a).localeCompare(String(b));
+        }
     </script>
 </body>
 </html>
