@@ -26,15 +26,12 @@
       margin:0 auto;
       padding:0 16px;
     }
-    /* 최상단 여백(상단 헤더 없을 때) */
     body > .container{padding-top:25px;}
 
-    /* 페이지 헤더 */
     .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
     .page-title{font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:10px;}
     .page-title i{color:var(--primary);}
 
-    /* 버튼 */
     .btn{
       padding:10px 16px;border:none;border-radius:8px;font-weight:600;
       font-size:.95rem;cursor:pointer;transition:var(--transition);
@@ -42,10 +39,11 @@
     }
     .btn-outline{background:#fff;color:#212529;border:1px solid var(--border);}
     .btn-outline:hover{background:#f8f9fa;}
+    .btn-danger{background:var(--danger);color:#fff;}
+    .btn-danger:hover{background:#e11573;}
     .btn-primary{background:var(--primary);color:#fff;}
     .btn-primary:hover{background:var(--primary-dark);}
 
-    /* 폼 카드 */
     .form-container{
       background:#fff;border-radius:12px;padding:24px;
       box-shadow:var(--card-shadow);margin-bottom:30px;
@@ -55,18 +53,39 @@
     .form-control{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:1rem;}
     .form-row{display:flex;gap:16px;}
     .form-row .form-group{flex:1;}
+    
+    /* ⬇️ [신규] 항목 추가 리스트 ⬇️ */
+    #item-list-container {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 50px;
+      background: #fdfdfd;
+      margin-bottom: 20px;
+    }
+    .giveaway-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .giveaway-item:last-child { border-bottom: none; }
+    .giveaway-item span { font-weight: 600; }
+    .giveaway-item button {
+      background: none; border: none; color: var(--danger);
+      font-size: 1.1rem; cursor: pointer; padding: 5px;
+    }
+    /* ⬆️ [신규] 항목 추가 리스트 ⬆️ */
 
-    /* 표 카드(그림자/라운드 처리 래퍼) */
     .table-card{
       background:#fff;border-radius:12px;box-shadow:var(--card-shadow);
-      overflow:hidden; /* 둥근 모서리 밖으로 셀 경계가 새지 않도록 */
+      overflow:hidden;
     }
-
-    /* 테이블 본체 */
     .log-table{
       width:100%;
       border-collapse:collapse;
-      table-layout:fixed;       /* ✅ 전체 폭 균등 분배 */
+      table-layout:fixed;
       background:#fff;
     }
     .log-table thead th,
@@ -74,8 +93,8 @@
       padding:10px 12px;
       border-bottom:1px solid var(--border);
       text-align:left;
-      white-space:normal;       /* ✅ 자동 줄바꿈 */
-      word-break:keep-all;      /* ✅ 한국어 단어 단위 줄바꿈 */
+      white-space:normal;
+      word-break:keep-all;
       line-height:1.4;
       font-size:.9rem;
     }
@@ -87,13 +106,12 @@
     }
     .log-table tbody tr:last-child td{border-bottom:none;}
 
-    /* 모바일 최적화 */
     @media (max-width:600px){
       .form-row{flex-direction:column;gap:0;}
       .log-table thead th,
       .log-table tbody td{
         padding:8px 10px;
-        font-size:.78rem;       /* ✅ 더 작게 */
+        font-size:.78rem;
       }
       .log-table thead th{font-size:.76rem;}
     }
@@ -101,34 +119,42 @@
 </head>
 <body>
   <div class="container">
-    <!-- 제목 -->
     <div class="page-header">
       <h1 class="page-title">
         <i class="fas fa-gift"></i> 재고 출고 (증정/시상/파손)
       </h1>
     </div>
 
-    <!-- 1. 출고 처리 -->
     <div class="form-container">
       <h2 style="margin-bottom:20px;">1. 출고 처리</h2>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label for="product_select">상품</label>
+          <select id="product_select" class="form-control" onchange="populateSizes(this.value)">
+            <option value="">-- 상품을 먼저 선택하세요 --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="size_select">사이즈 (재고)</label>
+          <select id="size_select" class="form-control" disabled>
+            <option value="">-- 상품을 먼저 선택하세요 --</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-outline" onclick="addItemToCart()" style="width:100%; margin-bottom: 25px;">
+        <i class="fas fa-plus"></i> 항목 추가
+      </button>
 
       <form id="stock-out-form" onsubmit="handleStockOut(event)">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="product_select">상품</label>
-            <select id="product_select" class="form-control" required onchange="populateSizes(this.value)">
-              <option value="">-- 상품을 먼저 선택하세요 --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="size_select">사이즈 (재고)</label>
-            <select id="size_select" name="inventory_id" class="form-control" required disabled>
-              <option value="">-- 상품을 먼저 선택하세요 --</option>
-            </select>
-          </div>
+        
+        <label style="display:block; margin-bottom: 8px; font-weight: 600;">출고할 항목</label>
+        <div id="item-list-container">
+          <p style="color: var(--gray); text-align: center; padding: 10px 0;">아직 추가된 항목이 없습니다.</p>
         </div>
 
-        <div class="form-row">
+        <div class="form-row" style="margin-top: 20px;">
           <div class="form-group">
             <label for="recipient_name">수령인</label>
             <input type="text" id="recipient_name" name="recipient_name" class="form-control" required />
@@ -146,12 +172,11 @@
         </div>
 
         <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;">
-          <i class="fas fa-minus-circle"></i> 재고 1개 출고하기
+          <i class="fas fa-minus-circle"></i> 선택한 항목 일괄 출고
         </button>
       </form>
     </div>
 
-    <!-- 2. 최근 출고 내역 -->
     <div class="page-header" style="margin-top:40px;">
       <h2 class="page-title">2. 최근 출고 내역 (최대 50건)</h2>
       <button class="btn btn-outline" onclick="fetchStockLog()">
@@ -180,13 +205,15 @@
   <script>
     const API_BASE_URL = "https://supermax.kr";
     let stockItems = [];
+    let giveawayCart = []; // ⬅️ [신규] 출고용 장바구니
 
-    // 1) 재고 있는 상품 목록
+    // 1) 재고 있는 상품 목록 (이전과 동일)
     async function fetchInStockItems(){
       const productSelect = document.getElementById('product_select');
       productSelect.disabled = true;
       try{
-        const res = await fetch(API_BASE_URL + '/college/admin/inventory-in-stock');
+        // [수정] API 엔드포인트는 네가 수정한 'is_active'가 제거된 API를 사용
+        const res = await fetch(API_BASE_URL + '/college/admin/inventory-in-stock'); 
         if(!res.ok) throw new Error('재고 목록 로딩 실패');
         stockItems = await res.json();
 
@@ -195,7 +222,6 @@
           return;
         }
 
-        // product_name 기준 그룹핑
         const products = {};
         stockItems.forEach(it=>{
           (products[it.product_name] ||= []).push(it);
@@ -216,7 +242,7 @@
       }
     }
 
-    // 2) 사이즈 드롭다운
+    // 2) 사이즈 드롭다운 (이전과 동일)
     function populateSizes(productName){
       const sizeSelect = document.getElementById('size_select');
       sizeSelect.innerHTML = '';
@@ -227,6 +253,7 @@
         return;
       }
 
+      // [수정] 재고가 0인 항목도 보여주되, 선택 불가능하게
       const sizes = stockItems.filter(it => it.product_name === productName);
       if(sizes.length === 0){
         sizeSelect.innerHTML = '<option value="">재고 없음</option>';
@@ -239,12 +266,87 @@
         const opt = document.createElement('option');
         opt.value = it.inventory_id;
         opt.textContent = `${it.size} (현재 ${it.stock_quantity}개)`;
+        
+        // ⬇️ [수정] 재고가 0이거나, 이미 카트에 담겨 재고가 0이 되면 비활성화 ⬇️
+        const inCartCount = giveawayCart.filter(cartItem => cartItem.inventory_id === it.inventory_id).length;
+        const remainingStock = it.stock_quantity - inCartCount;
+        
+        if (remainingStock <= 0) {
+            opt.disabled = true;
+            opt.textContent += ' [재고 없음]';
+        }
+        
         sizeSelect.appendChild(opt);
       });
       sizeSelect.disabled = false;
     }
 
-    // 3) 최근 출고 로그
+    // ⬇️ [신규] 카트(리스트)에 항목 추가
+    function addItemToCart() {
+        const productSelect = document.getElementById('product_select');
+        const sizeSelect = document.getElementById('size_select');
+        const inventoryId = parseInt(sizeSelect.value);
+
+        if (!inventoryId) {
+            alert('상품과 사이즈를 선택하세요.');
+            return;
+        }
+
+        const item = stockItems.find(i => i.inventory_id === inventoryId);
+        if (!item) {
+            alert('상품 정보를 찾을 수 없습니다.');
+            return;
+        }
+        
+        // 재고 수량 vs 카트 수량 체크
+        const inCartCount = giveawayCart.filter(cartItem => cartItem.inventory_id === inventoryId).length;
+        if (inCartCount >= item.stock_quantity) {
+            alert('재고가 부족합니다. 이 이상 추가할 수 없습니다.');
+            return;
+        }
+
+        // 카트에 추가 (간단하게 item 객체 통째로)
+        giveawayCart.push(item);
+        
+        // UI 갱신
+        renderGiveawayCart();
+        
+        // 드롭다운 초기화
+        productSelect.value = '';
+        sizeSelect.innerHTML = '<option value="">-- 상품을 먼저 선택하세요 --</option>';
+        sizeSelect.disabled = true;
+    }
+
+    // ⬇️ [신규] 카트(리스트) UI 그리기
+    function renderGiveawayCart() {
+        const container = document.getElementById('item-list-container');
+        if (giveawayCart.length === 0) {
+            container.innerHTML = '<p style="color: var(--gray); text-align: center; padding: 10px 0;">아직 추가된 항목이 없습니다.</p>';
+            return;
+        }
+
+        container.innerHTML = giveawayCart.map((item, index) => {
+            return `
+                <div class="giveaway-item">
+                    <span>${item.product_name} (${item.size})</span>
+                    <button type="button" onclick="removeItemFromCart(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        }).join('');
+
+        // 카트가 변경되었으므로, 사이즈 드롭다운의 재고 상태 갱신
+        populateSizes(document.getElementById('product_select').value);
+    }
+    
+    // ⬇️ [신규] 카트(리스트)에서 항목 제거
+    function removeItemFromCart(index) {
+        giveawayCart.splice(index, 1);
+        renderGiveawayCart(); // UI 갱신
+    }
+
+    // 3) 최근 출고 로그 (이전과 동일)
     async function fetchStockLog(){
       const tbody = document.getElementById('log-table-body');
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">새로고침 중...</td></tr>';
@@ -276,20 +378,27 @@
       }
     }
 
-    // 4) 출고 처리
+    // ⬇️ [수정] 4) 출고 처리 (일괄 처리)
     async function handleStockOut(e){
       e.preventDefault();
+      
+      if (giveawayCart.length === 0) {
+          alert('출고할 항목을 1개 이상 추가하세요.');
+          return;
+      }
+
       const form = document.getElementById('stock-out-form');
       const fd = new FormData(form);
 
       const data = {
-        inventory_id: fd.get('inventory_id'),
+        // [수정] inventory_id 배열을 전송
+        inventory_ids: giveawayCart.map(item => item.inventory_id), 
         reason: fd.get('reason'),
         recipient_name: fd.get('recipient_name'),
       };
 
-      if(!data.inventory_id || isNaN(parseInt(data.inventory_id))){
-        alert('상품과 사이즈를 정확히 선택하세요.');
+      if(!data.reason || !data.recipient_name){
+        alert('수령인과 사유를 정확히 입력하세요.');
         return;
       }
 
@@ -298,7 +407,8 @@
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
 
       try{
-        const res = await fetch(API_BASE_URL + '/college/admin/stock-out', {
+        // [수정] 새 API 엔드포인트 호출
+        const res = await fetch(API_BASE_URL + '/college/admin/stock-out-multiple', {
           method:'POST',
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify(data)
@@ -308,6 +418,11 @@
 
         alert(result.message);
         form.reset();
+        
+        // [수정] 카트와 리스트 비우기
+        giveawayCart = [];
+        renderGiveawayCart();
+        
         const sizeSelect = document.getElementById('size_select');
         sizeSelect.innerHTML = '<option value="">-- 상품을 먼저 선택하세요 --</option>';
         sizeSelect.disabled = true;
@@ -320,11 +435,12 @@
         alert(`출고 처리 실패: ${err.message}`);
       }finally{
         btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-minus-circle"></i> 재고 1개 출고하기';
+        // [수정] 버튼 텍스트 원복
+        btn.innerHTML = '<i class="fas fa-minus-circle"></i> 선택한 항목 일괄 출고';
       }
     }
 
-    // 5) 날짜 포맷
+    // 5) 날짜 포맷 (이전과 동일)
     function formatTimestamp(v){
       if(!v) return '';
       const d = new Date(v);
@@ -336,7 +452,7 @@
       return `${yy}.${mm}.${dd} ${hh}:${mi}`;
     }
 
-    // 초기 로드
+    // 초기 로드 (이전과 동일)
     document.addEventListener('DOMContentLoaded', ()=>{
       fetchInStockItems();
       fetchStockLog();
