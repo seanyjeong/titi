@@ -29,7 +29,6 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
-        /* [수정] body에서 background-color 제거 (껍데기가 관리) */
         body {
             color: var(--dark);
             line-height: 1.6;
@@ -39,17 +38,11 @@
         
         .container {
             width: 100%;
-            /* [수정] 너비는 iframe 안에서 직접 관리 */
             max-width: 1000px;
             padding: 0 16px;
             margin: 0 auto;
         }
         
-        /* ⬇️⬇️⬇️ [삭제] <header> 관련 스타일 모두 제거 ⬇️⬇️⬇️ */
-        /* (header, header-content, logo, admin-nav, nav-link...) */
-        /* ⬆️⬆️⬆️ [삭제] ⬆️⬆️⬆️ */
-        
-        /* 페이지 헤더 */
         .page-header {
             display: flex;
             justify-content: space-between;
@@ -70,7 +63,6 @@
             color: var(--primary);
         }
         
-        /* ... (이하 모든 CSS는 동일하게 유지) ... */
         .filter-buttons {
             display: flex;
             flex-wrap: wrap;
@@ -236,6 +228,8 @@
         
         .order-items {
             padding: 0;
+            /* ⬇️ [추가] 아코디언용 배경색 ⬇️ */
+            background-color: #fdfdfd; 
         }
         
         .order-item {
@@ -311,6 +305,30 @@
             margin-top: 12px;
         }
 
+        /* ⬇️⬇️⬇️ [수정/추가된 스타일] ⬇️⬇️⬇️ */
+        .order-header-main {
+            flex: 1;
+        }
+
+        .order-header-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        .order-total-price {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-top: 10px;
+        }
+
+        .toggle-btn {
+            min-width: 110px; /* 버튼 크기 고정 */
+        }
+        /* ⬆️⬆️⬆️ [수정/추가된 스타일] ⬆️⬆️⬆️ */
+
         @media (max-width: 768px) {
             .order-header {
                 flex-direction: column;
@@ -318,8 +336,9 @@
                 gap: 10px;
             }
             
+            /* ⬇️ [수정] .order-status 너비 수정 ⬇️ */
             .order-status {
-                width: 100%;
+                width: auto; /* 꽉 채우지 않게 */
                 justify-content: flex-start; 
             }
             
@@ -349,10 +368,15 @@
             .btn-sm {
                 width: auto; 
             }
-            /* [삭제] 껍데기로 이동
-            .admin-nav { ... }
-            .nav-link { ... }
-            */
+
+            /* ⬇️ [추가] 모바일용 컨트롤 정렬 ⬇️ */
+            .order-header-controls {
+                width: 100%;
+                flex-direction: row-reverse; /* 모바일에선 가로로 */
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 10px;
+            }
         }
         
         .loading {
@@ -430,7 +454,19 @@
         let currentFilter = 'ALL';
         const API_BASE_URL = "https://supermax.kr";
 
-        // ... (이하 <script> 내용은 하나도 수정할 필요 없이 동일함) ...
+        // ⬇️⬇️⬇️ [추가된 함수] ⬇️⬇️⬇️
+        function toggleItems(button, elementId) {
+            const itemsContainer = document.getElementById(elementId);
+            if (itemsContainer.style.display === 'none' || itemsContainer.style.display === '') {
+                itemsContainer.style.display = 'block';
+                button.innerHTML = '<i class="fas fa-chevron-up"></i> 품목 접기';
+            } else {
+                itemsContainer.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-chevron-down"></i> 품목 펼치기';
+            }
+        }
+        // ⬆️⬆️⬆️ [추가된 함수] ⬆️⬆️⬆️
+        
         async function fetchOrderDetails() {
             showLoading(true);
             try {
@@ -449,6 +485,7 @@
             }
         }
 
+        // ⬇️⬇️⬇️ [통째로 교체된 함수] ⬇️⬇️⬇️
         function renderOrderItems(orderItemsToRender) {
             const container = document.getElementById('orders-container');
             container.innerHTML = ''; 
@@ -483,6 +520,9 @@
             Object.keys(ordersGrouped).forEach(orderId => {
                 const order = ordersGrouped[orderId];
                 
+                // [추가] 이 주문의 총 합계 금액 계산
+                const totalPrice = order.items.reduce((sum, item) => sum + item.price_per_item, 0);
+
                 const orderCard = document.createElement('div');
                 orderCard.className = 'order-card';
                 
@@ -507,19 +547,32 @@
                     </div>
                 `;
                 
+                // [수정] order-header 구조 변경 (펼치기 버튼, 총액 추가)
                 orderCard.innerHTML = `
                     <div class="order-header">
-                        <div>
+                        <div class="order-header-main">
                             <div class="order-id">주문번호: ${orderId}</div>
                             <div class="order-customer">${order.customer_name} (${order.phone_number})</div>
                             <div class="order-date">주문일: ${formatDate(order.order_date)}</div>
-                            ${paymentControlHtml} 
+                            ${paymentControlHtml}
+                            
+                            <div class="order-total-price">
+                                총 주문액: ${totalPrice.toLocaleString()}원
+                            </div>
                         </div>
-                        <div class="order-status">
-                            ${itemStatusBadges} 
+
+                        <div class="order-header-controls">
+                            <button class="btn btn-outline btn-sm toggle-btn" onclick="toggleItems(this, 'items-for-${orderId}')">
+                                <i class="fas fa-chevron-down"></i> 품목 펼치기
+                            </button>
+                            
+                            <div class="order-status">
+                                ${itemStatusBadges} 
+                            </div>
                         </div>
                     </div>
-                    <div class="order-items">
+                    
+                    <div class="order-items" id="items-for-${orderId}" style="display: none;">
                         ${order.items.map(item => {
                             const itemTimestamps = [];
                             if (item.ordered_at) {
@@ -563,6 +616,7 @@
                 container.appendChild(orderCard);
             });
         }
+        // ⬆️⬆️⬆️ [통째로 교체된 함수] ⬆️⬆️⬆️
         
         function showEmptyState(message) {
             const container = document.getElementById('orders-container');
@@ -617,6 +671,8 @@
         }
 
         async function updateItemStatus(itemId, newStatus) {
+            // [수정] 303줄의 response.json() 에러 방지용 try-catch 랩핑
+            let result; 
             try {
                 const response = await fetch(`${API_BASE_URL}/college/admin/order-item/${itemId}/status`, {
                     method: 'PATCH',
@@ -625,8 +681,16 @@
                         status: newStatus 
                     })
                 });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message);
+                
+                // [수정] 에러 핸들링 보강
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    result = { message: '서버에서 HTML 응답이 왔습니다.' }; // JSON이 아닌 경우
+                }
+
+                if (!response.ok) throw new Error(result.message || '서버 응답 오류');
 
                 alert(result.message); 
                 
@@ -646,11 +710,13 @@
             } catch (error) {
                 console.error(error);
                 alert('아이템 상태 업데이트 중 오류가 발생했습니다: ' + error.message);
-                fetchOrderDetails();
+                fetchOrderDetails(); // 에러 시 목록 강제 새로고침
             }
         }
         
         async function updatePaymentStatus(orderId, newStatus) {
+            // [수정] 339줄의 response.json() 에러 방지용 try-catch 랩핑
+            let result;
             try {
                 const response = await fetch(`${API_BASE_URL}/college/admin/orders/${orderId}/status`, {
                     method: 'PATCH',
@@ -659,8 +725,16 @@
                         paymentStatus: newStatus
                     })
                 });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message);
+
+                // [수정] 에러 핸들링 보강
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    result = { message: '서버에서 HTML 응답이 왔습니다.' }; // JSON이 아닌 경우
+                }
+                
+                if (!response.ok) throw new Error(result.message || '서버 응답 오류');
 
                 alert(result.message); 
                 
@@ -674,20 +748,29 @@
             } catch (error) {
                 console.error(error);
                 alert('입금 상태 업데이트 중 오류가 발생했습니다: ' + error.message);
-                fetchOrderDetails();
+                fetchOrderDetails(); // 에러 시 목록 강제 새로고침
             }
         }
 
         async function deleteOrderItem(itemId) {
             if (!confirm('정말 이 주문 항목을 삭제하시겠습니까?\n(주문 전체가 아니라 이 항목만 삭제됩니다)\n\n※ "재고 있음" 상태였다면, 재고가 1개 복원됩니다.')) return;
             
+            // [수정] 373줄의 response.json() 에러 방지용 try-catch 랩핑
+            let result;
             try {
                 const response = await fetch(`${API_BASE_URL}/college/admin/order-item/${itemId}`, {
                     method: 'DELETE'
                 });
                 
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.message);
+                // [수정] 에러 핸들링 보강
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    result = { message: '서버에서 HTML 응답이 왔습니다.' }; // JSON이 아닌 경우
+                }
+
+                if (!response.ok) throw new Error(result.message || '서버 응답 오류');
 
                 alert(result.message);
                 fetchOrderDetails(); 
