@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관리자 - 재고 출고 (증정/시상)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root{
+      --primary:#4361ee;
+      --primary-dark:#3a56d4;
+      --secondary:#7209b7;
+      --danger:#f72585;
+      --gray:#6c757d;
+      --border:#dee2e6;
+      --card-shadow:0 4px 12px rgba(0,0,0,.08);
+      --transition:.25s ease;
+    }
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;}
+    body{background:#f5f7fb;color:#212529;line-height:1.6;}
+
+    .container{
+      width:95%;
+      max-width:1000px;
+      margin:0 auto;
+      padding:0 16px;
+    }
+    /* 최상단 여백(상단 헤더 없을 때) */
+    body > .container{padding-top:25px;}
+
+    /* 페이지 헤더 */
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+    .page-title{font-size:1.5rem;font-weight:700;display:flex;align-items:center;gap:10px;}
+    .page-title i{color:var(--primary);}
+
+    /* 버튼 */
+    .btn{
+      padding:10px 16px;border:none;border-radius:8px;font-weight:600;
+      font-size:.95rem;cursor:pointer;transition:var(--transition);
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .btn-outline{background:#fff;color:#212529;border:1px solid var(--border);}
+    .btn-outline:hover{background:#f8f9fa;}
+    .btn-primary{background:var(--primary);color:#fff;}
+    .btn-primary:hover{background:var(--primary-dark);}
+
+    /* 폼 카드 */
+    .form-container{
+      background:#fff;border-radius:12px;padding:24px;
+      box-shadow:var(--card-shadow);margin-bottom:30px;
+    }
+    .form-group{margin-bottom:18px;}
+    .form-group label{display:block;margin-bottom:8px;font-weight:600;}
+    .form-control{width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-size:1rem;}
+    .form-row{display:flex;gap:16px;}
+    .form-row .form-group{flex:1;}
+
+    /* 표 카드(그림자/라운드 처리 래퍼) */
+    .table-card{
+      background:#fff;border-radius:12px;box-shadow:var(--card-shadow);
+      overflow:hidden; /* 둥근 모서리 밖으로 셀 경계가 새지 않도록 */
+    }
+
+    /* 테이블 본체 */
+    .log-table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;       /* ✅ 전체 폭 균등 분배 */
+      background:#fff;
+    }
+    .log-table thead th,
+    .log-table tbody td{
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
+      text-align:left;
+      white-space:normal;       /* ✅ 자동 줄바꿈 */
+      word-break:keep-all;      /* ✅ 한국어 단어 단위 줄바꿈 */
+      line-height:1.4;
+      font-size:.9rem;
+    }
+    .log-table thead th{
+      background:#f8f9fa;
+      font-weight:700;
+      font-size:.88rem;
+      color:#555;
+    }
+    .log-table tbody tr:last-child td{border-bottom:none;}
+
+    /* 모바일 최적화 */
+    @media (max-width:600px){
+      .form-row{flex-direction:column;gap:0;}
+      .log-table thead th,
+      .log-table tbody td{
+        padding:8px 10px;
+        font-size:.78rem;       /* ✅ 더 작게 */
+      }
+      .log-table thead th{font-size:.76rem;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 제목 -->
+    <div class="page-header">
+      <h1 class="page-title">
+        <i class="fas fa-gift"></i> 재고 출고 (증정/시상/파손)
+      </h1>
+    </div>
+
+    <!-- 1. 출고 처리 -->
+    <div class="form-container">
+      <h2 style="margin-bottom:20px;">1. 출고 처리</h2>
+
+      <form id="stock-out-form" onsubmit="handleStockOut(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="product_select">상품</label>
+            <select id="product_select" class="form-control" required onchange="populateSizes(this.value)">
+              <option value="">-- 상품을 먼저 선택하세요 --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="size_select">사이즈 (재고)</label>
+            <select id="size_select" name="inventory_id" class="form-control" required disabled>
+              <option value="">-- 상품을 먼저 선택하세요 --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="recipient_name">수령인</label>
+            <input type="text" id="recipient_name" name="recipient_name" class="form-control" required />
+          </div>
+          <div class="form-group">
+            <label for="reason">사유</label>
+            <select id="reason" name="reason" class="form-control" required>
+              <option value="신규">신규</option>
+              <option value="시상">시상</option>
+              <option value="파손">파손/폐기</option>
+              <option value="재고조정">재고조정</option>
+              <option value="기타">기타</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;">
+          <i class="fas fa-minus-circle"></i> 재고 1개 출고하기
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. 최근 출고 내역 -->
+    <div class="page-header" style="margin-top:40px;">
+      <h2 class="page-title">2. 최근 출고 내역 (최대 50건)</h2>
+      <button class="btn btn-outline" onclick="fetchStockLog()">
+        <i class="fas fa-sync-alt"></i> 새로고침
+      </button>
+    </div>
+
+    <div class="table-card">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th>일시</th>
+            <th>상품명</th>
+            <th>사이즈</th>
+            <th>수령인</th>
+            <th>사유</th>
+          </tr>
+        </thead>
+        <tbody id="log-table-body">
+          <tr><td colspan="5" style="text-align:center;">로딩 중...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE_URL = "https://supermax.kr";
+    let stockItems = [];
+
+    // 1) 재고 있는 상품 목록
+    async function fetchInStockItems(){
+      const productSelect = document.getElementById('product_select');
+      productSelect.disabled = true;
+      try{
+        const res = await fetch(API_BASE_URL + '/college/admin/inventory-in-stock');
+        if(!res.ok) throw new Error('재고 목록 로딩 실패');
+        stockItems = await res.json();
+
+        if(stockItems.length === 0){
+          productSelect.innerHTML = '<option value="">출고할 재고가 없습니다.</option>';
+          return;
+        }
+
+        // product_name 기준 그룹핑
+        const products = {};
+        stockItems.forEach(it=>{
+          (products[it.product_name] ||= []).push(it);
+        });
+
+        productSelect.innerHTML = '<option value="">-- 상품을 먼저 선택하세요 --</option>';
+        Object.keys(products).sort().forEach(name=>{
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name;
+          productSelect.appendChild(opt);
+        });
+      }catch(err){
+        console.error(err);
+        alert('재고 목록을 불러오는데 실패했습니다.');
+      }finally{
+        productSelect.disabled = false;
+      }
+    }
+
+    // 2) 사이즈 드롭다운
+    function populateSizes(productName){
+      const sizeSelect = document.getElementById('size_select');
+      sizeSelect.innerHTML = '';
+
+      if(!productName){
+        sizeSelect.innerHTML = '<option value="">-- 상품을 먼저 선택하세요 --</option>';
+        sizeSelect.disabled = true;
+        return;
+      }
+
+      const sizes = stockItems.filter(it => it.product_name === productName);
+      if(sizes.length === 0){
+        sizeSelect.innerHTML = '<option value="">재고 없음</option>';
+        sizeSelect.disabled = true;
+        return;
+      }
+
+      sizeSelect.innerHTML = '<option value="">-- 사이즈를 선택하세요 --</option>';
+      sizes.forEach(it=>{
+        const opt = document.createElement('option');
+        opt.value = it.inventory_id;
+        opt.textContent = `${it.size} (현재 ${it.stock_quantity}개)`;
+        sizeSelect.appendChild(opt);
+      });
+      sizeSelect.disabled = false;
+    }
+
+    // 3) 최근 출고 로그
+    async function fetchStockLog(){
+      const tbody = document.getElementById('log-table-body');
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">새로고침 중...</td></tr>';
+      try{
+        const res = await fetch(API_BASE_URL + '/college/admin/stock-log');
+        if(!res.ok) throw new Error('출고 내역 로딩 실패');
+        const logs = await res.json();
+
+        if(!logs || logs.length === 0){
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">출고 내역이 없습니다.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        logs.forEach(log=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${formatTimestamp(log.log_date)}</td>
+            <td>${log.product_name}</td>
+            <td>${log.size}</td>
+            <td>${log.recipient_name}</td>
+            <td>${log.reason}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }catch(err){
+        console.error(err);
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#d00;">오류: ${err.message}</td></tr>`;
+      }
+    }
+
+    // 4) 출고 처리
+    async function handleStockOut(e){
+      e.preventDefault();
+      const form = document.getElementById('stock-out-form');
+      const fd = new FormData(form);
+
+      const data = {
+        inventory_id: fd.get('inventory_id'),
+        reason: fd.get('reason'),
+        recipient_name: fd.get('recipient_name'),
+      };
+
+      if(!data.inventory_id || isNaN(parseInt(data.inventory_id))){
+        alert('상품과 사이즈를 정확히 선택하세요.');
+        return;
+      }
+
+      const btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 처리 중...';
+
+      try{
+        const res = await fetch(API_BASE_URL + '/college/admin/stock-out', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(data)
+        });
+        const result = await res.json();
+        if(!res.ok) throw new Error(result.message);
+
+        alert(result.message);
+        form.reset();
+        const sizeSelect = document.getElementById('size_select');
+        sizeSelect.innerHTML = '<option value="">-- 상품을 먼저 선택하세요 --</option>';
+        sizeSelect.disabled = true;
+
+        // 목록 갱신
+        fetchInStockItems();
+        fetchStockLog();
+      }catch(err){
+        console.error('출고 처리 실패:', err);
+        alert(`출고 처리 실패: ${err.message}`);
+      }finally{
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-minus-circle"></i> 재고 1개 출고하기';
+      }
+    }
+
+    // 5) 날짜 포맷
+    function formatTimestamp(v){
+      if(!v) return '';
+      const d = new Date(v);
+      const yy = String(d.getFullYear()).slice(-2);
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const dd = String(d.getDate()).padStart(2,'0');
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mi = String(d.getMinutes()).padStart(2,'0');
+      return `${yy}.${mm}.${dd} ${hh}:${mi}`;
+    }
+
+    // 초기 로드
+    document.addEventListener('DOMContentLoaded', ()=>{
+      fetchInStockItems();
+      fetchStockLog();
+    });
+  </script>
+</body>
+</html>

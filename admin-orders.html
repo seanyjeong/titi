@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 - 주문/발주 관리</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #7209b7;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #0dcaf0; 
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --border: #dee2e6;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* [수정] body에서 background-color 제거 (껍데기가 관리) */
+        body {
+            color: var(--dark);
+            line-height: 1.6;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            /* [수정] 너비는 iframe 안에서 직접 관리 */
+            max-width: 1000px;
+            padding: 0 16px;
+            margin: 0 auto;
+        }
+        
+        /* ⬇️⬇️⬇️ [삭제] <header> 관련 스타일 모두 제거 ⬇️⬇️⬇️ */
+        /* (header, header-content, logo, admin-nav, nav-link...) */
+        /* ⬆️⬆️⬆️ [삭제] ⬆️⬆️⬆️ */
+        
+        /* 페이지 헤더 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 25px 0 20px;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .page-title i {
+            color: var(--primary);
+        }
+        
+        /* ... (이하 모든 CSS는 동일하게 유지) ... */
+        .filter-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e08615;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #3ab3d6;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-info {
+            background: var(--info);
+            color: white;
+        }
+        .btn-info:hover {
+            background: #0baccc;
+        }
+
+        .btn-outline {
+            background: white;
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+        
+        .btn-outline:hover {
+            background: var(--light);
+        }
+        
+        .filter-buttons .btn {
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            gap: 6px;
+        }
+
+        .orders-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .order-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .order-header {
+            background: var(--light);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .order-id {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--dark);
+        }
+        
+        .order-date {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .order-customer {
+            margin-top: 8px;
+            font-weight: 600;
+        }
+        
+        .order-phone {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .order-status {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap; 
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-PENDING {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-PAID {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-NEEDS_ORDER {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-ORDERED {
+            background: #d1edff; 
+            color: #0c5460;
+        }
+        .status-IN_STOCK {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-FULFILLED {
+            background: #e9ecef;
+            color: #495057;
+        }
+        
+        .order-items {
+            padding: 0;
+        }
+        
+        .order-item {
+            display: flex;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-info {
+            flex: 1;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .item-details {
+            display: flex;
+            gap: 15px;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .item-timestamps {
+            font-size: 0.8rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .item-status {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 150px;
+        }
+        
+        .status-select {
+            padding: 8px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            width: 100%;
+        }
+        
+        .item-action {
+            margin-top: 8px;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #e11573;
+        }
+        
+        .payment-status-control {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .order-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .order-status {
+                width: 100%;
+                justify-content: flex-start; 
+            }
+            
+            .order-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .item-status {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+                gap: 10px; 
+                align-items: center; 
+            }
+
+            .status-select {
+                flex: 1; 
+            }
+            
+            .item-action {
+                width: auto; 
+                margin-top: 0; 
+            }
+            
+            .btn-sm {
+                width: auto; 
+            }
+            /* [삭제] 껍데기로 이동
+            .admin-nav { ... }
+            .nav-link { ... }
+            */
+        }
+        
+        .loading {
+            display: none; 
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: var(--border);
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-clipboard-list"></i> 주문/발주 관리
+            </h1>
+            <button class="btn btn-outline" onclick="fetchOrderDetails()">
+                <i class="fas fa-sync-alt"></i> 새로고침
+            </button>
+        </div>
+        
+        <div class="filter-buttons">
+            <button class="btn btn-primary" onclick="filterItems('ALL')">
+                <i class="fas fa-list"></i> 전체 보기
+            </button>
+            <button class="btn btn-warning" onclick="filterItems('NEEDS_ORDER')">
+                <i class="fas fa-exclamation-triangle"></i> 재고 없음 (발주 필요)
+            </button>
+            <button class="btn btn-info" onclick="filterItems('ORDERED')">
+                <i class="fas fa-truck-loading"></i> 발주 완료
+            </button>
+            <button class="btn btn-success" onclick="filterItems('IN_STOCK')">
+                <i class="fas fa-box-open"></i> 재고 있음 (분출 대기)
+            </button>
+            <button class="btn btn-secondary" onclick="filterItems('FULFILLED')">
+                <i class="fas fa-check-circle"></i> 분출 완료
+            </button>
+        </div>
+        <div id="orders-container" class="orders-container">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>주문 정보를 불러오는 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allOrderItems = [];
+        let currentFilter = 'ALL';
+        const API_BASE_URL = "https://supermax.kr";
+
+        // ... (이하 <script> 내용은 하나도 수정할 필요 없이 동일함) ...
+        async function fetchOrderDetails() {
+            showLoading(true);
+            try {
+                const response = await fetch(API_BASE_URL + '/college/admin/orders-detail');
+                if (!response.ok) throw new Error('서버에서 데이터를 가져오지 못했습니다.');
+                allOrderItems = await response.json();
+                
+                filterItems(currentFilter);
+                
+            } catch (error) {
+                console.error(error);
+                alert('주문 내역을 불러오는데 실패했습니다.');
+                showEmptyState('주문 내역을 불러오지 못했습니다.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function renderOrderItems(orderItemsToRender) {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = ''; 
+            
+            const loadingHtml = `
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>주문 정보를 불러오는 중...</p>
+                </div>
+            `;
+            container.innerHTML = loadingHtml;
+
+            if (orderItemsToRender.length === 0) {
+                showEmptyState('표시할 주문 내역이 없습니다.');
+                return;
+            }
+
+            const ordersGrouped = {};
+            orderItemsToRender.forEach(item => {
+                if (!ordersGrouped[item.order_id]) {
+                    ordersGrouped[item.order_id] = {
+                        items: [],
+                        customer_name: item.customer_name,
+                        phone_number: item.phone_number,
+                        order_date: item.order_date,
+                        payment_status: item.payment_status 
+                    };
+                }
+                ordersGrouped[item.order_id].items.push(item);
+            });
+
+            Object.keys(ordersGrouped).forEach(orderId => {
+                const order = ordersGrouped[orderId];
+                
+                const orderCard = document.createElement('div');
+                orderCard.className = 'order-card';
+                
+                const uniqueItemStatuses = [...new Set(order.items.map(item => item.item_status))];
+                const itemStatusBadges = uniqueItemStatuses.map(status => {
+                    const statusClass = getItemStatusClass(status);
+                    const statusText = getItemStatusText(status);
+                    return `<span class="status-badge ${statusClass}">${statusText}</span>`;
+                }).join('');
+
+                const paymentStatus = order.payment_status;
+                const paymentStatusText = getPaymentStatusText(paymentStatus);
+                const paymentStatusClass = getPaymentStatusClass(paymentStatus);
+                
+                const paymentControlHtml = `
+                    <div class="payment-status-control">
+                        <span class="status-badge ${paymentStatusClass}">${paymentStatusText}</span>
+                        <select class="status-select" style="width: 150px; font-size: 0.9rem;" onchange="updatePaymentStatus(${orderId}, this.value)">
+                            <option value="PENDING" ${paymentStatus === 'PENDING' ? 'selected' : ''}>입금 대기</option>
+                            <option value="PAID" ${paymentStatus === 'PAID' ? 'selected' : ''}>입금 완료</option>
+                        </select>
+                    </div>
+                `;
+                
+                orderCard.innerHTML = `
+                    <div class="order-header">
+                        <div>
+                            <div class="order-id">주문번호: ${orderId}</div>
+                            <div class="order-customer">${order.customer_name} (${order.phone_number})</div>
+                            <div class="order-date">주문일: ${formatDate(order.order_date)}</div>
+                            ${paymentControlHtml} 
+                        </div>
+                        <div class="order-status">
+                            ${itemStatusBadges} 
+                        </div>
+                    </div>
+                    <div class="order-items">
+                        ${order.items.map(item => {
+                            const itemTimestamps = [];
+                            if (item.ordered_at) {
+                                itemTimestamps.push(`발주: ${formatTimestamp(item.ordered_at)}`);
+                            }
+                            if (item.fulfilled_at) {
+                                itemTimestamps.push(`분출: ${formatTimestamp(item.fulfilled_at)}`);
+                            }
+
+                            return `
+                            <div class="order-item">
+                                <div class="item-info">
+                                    <div class="item-name">${item.product_name}</div>
+                                    <div class="item-details">
+                                        <span>사이즈: ${item.size}</span>
+                                        <span>가격: ${item.price_per_item.toLocaleString()}원</span> 
+                                    </div>
+                                    <div class="item-timestamps">
+                                        ${itemTimestamps.join(' | ')}
+                                    </div>
+                                </div>
+                                <div class="item-status">
+                                    <select class="status-select" id="status-${item.item_id}" onchange="updateItemStatus(${item.item_id}, this.value)">
+                                        <option value="NEEDS_ORDER" ${item.item_status === 'NEEDS_ORDER' ? 'selected' : ''}>재고 없음 (발주 필요)</option>
+                                        <option value="ORDERED" ${item.item_status === 'ORDERED' ? 'selected' : ''}>발주 완료</option>
+                                        <option value="IN_STOCK" ${item.item_status === 'IN_STOCK' ? 'selected' : ''}>재고 있음 (분출 대기)</option>
+                                        <option value="FULFILLED" ${item.item_status === 'FULFILLED' ? 'selected' : ''}>✅ 분출 완료</option>
+                                    </select>
+                                    <div class="item-action">
+                                        <button class="btn btn-danger btn-sm" onclick="deleteOrderItem(${item.item_id})">
+                                            <i class="fas fa-trash"></i> 삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(orderCard);
+            });
+        }
+        
+        function showEmptyState(message) {
+            const container = document.getElementById('orders-container');
+            container.innerHTML += `
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>${message}</h3>
+                </div>
+            `;
+        }
+        
+        function getItemStatusClass(status) {
+            switch(status) {
+                case 'NEEDS_ORDER': return 'status-NEEDS_ORDER';
+                case 'IN_STOCK': return 'status-IN_STOCK';
+                case 'ORDERED': return 'status-ORDERED';
+                case 'FULFILLED': return 'status-FULFILLED';
+                default: return 'status-NEEDS_ORDER';
+            }
+        }
+        function getItemStatusText(status) {
+            switch(status) {
+                case 'NEEDS_ORDER': return '재고 없음 (발주 필요)';
+                case 'IN_STOCK': return '재고 있음 (분출 대기)';
+                case 'ORDERED': return '발주 완료';
+                case 'FULFILLED': return '✅ 분출 완료';
+                default: return status;
+            }
+        }
+
+        function getPaymentStatusClass(status) {
+            return status === 'PAID' ? 'status-PAID' : 'status-PENDING';
+        }
+        function getPaymentStatusText(status) {
+            return status === 'PAID' ? '입금 완료' : '입금 대기';
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+        }
+
+        function formatTimestamp(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            const yy = date.getFullYear().toString().slice(-2);
+            const mm = (date.getMonth()+1).toString().padStart(2, '0');
+            const dd = date.getDate().toString().padStart(2, '0');
+            const hh = date.getHours().toString().padStart(2, '0');
+            const min = date.getMinutes().toString().padStart(2, '0');
+            return `${yy}.${mm}.${dd} ${hh}:${min}`;
+        }
+
+        async function updateItemStatus(itemId, newStatus) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/college/admin/order-item/${itemId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        status: newStatus 
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+
+                alert(result.message); 
+                
+                const item = allOrderItems.find(i => i.item_id === itemId);
+                if (item) {
+                    item.item_status = newStatus;
+                    if (newStatus === 'ORDERED') item.ordered_at = new Date().toISOString();
+                    if (newStatus === 'FULFILLED') item.fulfilled_at = new Date().toISOString();
+                    if (newStatus === 'NEEDS_ORDER') {
+                        item.ordered_at = null;
+                        item.fulfilled_at = null;
+                    }
+                }
+                
+                filterItems(currentFilter);
+
+            } catch (error) {
+                console.error(error);
+                alert('아이템 상태 업데이트 중 오류가 발생했습니다: ' + error.message);
+                fetchOrderDetails();
+            }
+        }
+        
+        async function updatePaymentStatus(orderId, newStatus) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/college/admin/orders/${orderId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        paymentStatus: newStatus
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+
+                alert(result.message); 
+                
+                const itemsToUpdate = allOrderItems.filter(i => i.order_id === orderId);
+                itemsToUpdate.forEach(item => {
+                    item.payment_status = newStatus;
+                });
+                
+                filterItems(currentFilter); 
+
+            } catch (error) {
+                console.error(error);
+                alert('입금 상태 업데이트 중 오류가 발생했습니다: ' + error.message);
+                fetchOrderDetails();
+            }
+        }
+
+        async function deleteOrderItem(itemId) {
+            if (!confirm('정말 이 주문 항목을 삭제하시겠습니까?\n(주문 전체가 아니라 이 항목만 삭제됩니다)\n\n※ "재고 있음" 상태였다면, 재고가 1개 복원됩니다.')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/college/admin/order-item/${itemId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message);
+
+                alert(result.message);
+                fetchOrderDetails(); 
+                
+            } catch (error) {
+                console.error(error);
+                alert('주문 항목 삭제 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        function filterItems(filter) {
+            currentFilter = filter;
+            let itemsToRender = allOrderItems;
+
+            if (filter !== 'ALL') {
+                itemsToRender = allOrderItems.filter(item => item.item_status === filter);
+            }
+            
+            renderOrderItems(itemsToRender);
+        }
+
+        function showLoading(show) {
+            const loadingEl = document.getElementById('loading');
+            if (loadingEl) {
+                loadingEl.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchOrderDetails);
+    </script>
+</body>
+</html>

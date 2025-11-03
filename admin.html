@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>일산맥스 관리자 (모바일)</title>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    :root{
+      --primary:#4361ee;
+      --primary-dark:#334acc;
+      --bg:#f5f7fb;
+      --text:#1f2937;
+      --muted:#94a3b8;
+      --card:#ffffff;
+      --border:#e5e7eb;
+      --shadow:0 6px 20px rgba(0,0,0,.08);
+      --tab-h:64px;         /* 하단 탭 높이 */
+      --head-h:56px;        /* 상단 헤더 높이 */
+      --radius:14px;
+      --ring:0 0 0 3px rgba(67,97,238,.15) inset;
+      --tap: 0.2s ease;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-top: env(safe-area-inset-top, 0px);
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", sans-serif;
+      overflow:hidden; /* 본문 스크롤 금지, iframe만 스크롤 */
+    }
+
+    /* 상단 헤더 */
+    header{
+      position:sticky; top:0; z-index:5;
+      height:var(--head-h);
+      padding-top:var(--safe-top);
+      background:linear-gradient(135deg, var(--primary), #7209b7);
+      color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700;
+      letter-spacing:.2px;
+      box-shadow: var(--shadow);
+    }
+    header .brand{
+      display:flex; align-items:center; gap:10px; font-size:1.05rem;
+    }
+    header .brand i{font-size:1.15rem}
+
+    /* 컨텐츠 영역(iframe 래퍼) */
+    .stage{
+      position:relative;
+      width:100%;
+      /* 전체 뷰 높이에서 헤더, 탭, 안전영역 제외 */
+      height: calc(100dvh - var(--head-h) - var(--tab-h) - var(--safe-bottom));
+      /* 일부 Android에서 100vh 오동작 보완 */
+      overflow:hidden;
+      border-top:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      background: var(--card);
+    }
+
+    /* 단일 iframe: 가로 100%, 세로 꽉차게 */
+    iframe#content{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      border:0;
+      background:#fff;
+    }
+
+    /* 로딩 오버레이 */
+    .loading{
+      position:absolute; inset:0; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:12px;
+      background: #fff; z-index:2;
+    }
+    .spinner{
+      width:32px; height:32px; border-radius:50%;
+      border:3px solid #e5e7eb; border-left-color: var(--primary);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading p{margin:0; color:var(--muted); font-size:.92rem}
+
+    /* 하단 탭바 */
+    nav.tabs{
+      position:fixed; left:0; right:0; bottom:0; z-index:10;
+      height:calc(var(--tab-h) + var(--safe-bottom));
+      padding-bottom:var(--safe-bottom);
+      background:#fff; border-top:1px solid var(--border);
+      display:grid; grid-template-columns: repeat(3,1fr);
+      box-shadow: 0 -8px 24px rgba(0,0,0,.06);
+    }
+    .tab{
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:6px; color:#6b7280; font-size:.78rem; font-weight:600;
+      text-decoration:none; transition: color var(--tap), transform var(--tap);
+      user-select:none;
+    }
+    .tab i{font-size:1.15rem}
+    .tab:active{transform: translateY(1px)}
+    .tab.active{color:var(--primary)}
+    .tab.active i{filter: drop-shadow(var(--ring));}
+
+    /* 상단 미니 필터 영역(옵션) – 필요시 확장 가능 */
+    .filters{
+      position:absolute; top:10px; right:10px; z-index:3;
+      display:flex; gap:8px;
+    }
+    .chip{
+      background:#f8fafc; border:1px solid var(--border); color:#475569;
+      padding:6px 10px; border-radius:999px; font-size:.78rem; font-weight:700;
+    }
+
+    /* iOS overscroll 방지 */
+    .stage, iframe{ overscroll-behavior: contain; }
+  </style>
+</head>
+<body>
+  <!-- 상단 헤더 -->
+  <header>
+    <div class="brand">
+      <i class="fas fa-cogs"></i>
+      <span>일산맥스 관리자</span>
+    </div>
+  </header>
+
+  <!-- 컨텐츠(Stage) + 로딩 -->
+  <main class="stage">
+    <div id="loader" class="loading" aria-hidden="true" style="display:none;">
+      <div class="spinner"></div>
+      <p>불러오는 중…</p>
+    </div>
+    <iframe id="content" title="관리 페이지"></iframe>
+  </main>
+
+  <!-- 하단 탭 -->
+  <nav class="tabs" role="tablist" aria-label="하단 탭">
+    <a class="tab" data-target="orders" role="tab" aria-selected="true">
+      <i class="fas fa-clipboard-list"></i>
+      <span>주문/발주</span>
+    </a>
+    <a class="tab" data-target="products" role="tab" aria-selected="false">
+      <i class="fas fa-boxes"></i>
+      <span>상품/재고</span>
+    </a>
+    <a class="tab" data-target="giveaway" role="tab" aria-selected="false">
+      <i class="fas fa-gift"></i>
+      <span>재고 출고</span>
+    </a>
+  </nav>
+
+  <script>
+    // 탭명 ↔ 파일 매핑
+    const PAGES = {
+      orders:   'admin-orders.html',
+      products: 'admin-products.html',
+      giveaway: 'admin-giveaway.html',
+    };
+
+    const $iframe = document.getElementById('content');
+    const $loader = document.getElementById('loader');
+    const $tabs   = Array.from(document.querySelectorAll('.tab'));
+
+    // 해시 → 탭키
+    function hashToKey() {
+      const h = (location.hash || '').replace('#','').trim().toLowerCase();
+      if (PAGES[h]) return h;
+      return 'orders';
+    }
+
+    // 탭 활성화/비활성
+    function activateTab(key){
+      $tabs.forEach(t => {
+        const active = t.dataset.target === key;
+        t.classList.toggle('active', active);
+        t.setAttribute('aria-selected', String(active));
+      });
+    }
+
+    // iframe 로딩 with 스피너 & 해시 동기화
+    function loadPage(key, pushHash=true){
+      const src = PAGES[key];
+      if (!src) return;
+
+      // 로더 ON
+      $loader.style.display = 'flex';
+      $iframe.style.opacity = '0';
+
+      // 해시 갱신 (뒤로가기 지원)
+      if (pushHash && location.hash !== '#'+key) {
+        history.replaceState(null, '', '#'+key);
+      }
+
+      // 실제 로드
+      $iframe.src = src;
+
+      // onload 후 스피너 OFF
+      const onLoaded = () => {
+        $iframe.removeEventListener('load', onLoaded);
+        // 약간의 fade-in
+        requestAnimationFrame(() => {
+          $loader.style.display = 'none';
+          $iframe.style.opacity = '1';
+        });
+        // iOS/안드 overscroll 보정
+        try {
+          $iframe.contentWindow.scrollTo(0,0);
+        } catch(e){}
+      };
+      $iframe.addEventListener('load', onLoaded);
+    }
+
+    // 화면 높이 재계산 (혹시 일부 브라우저에서 필요할 때)
+    function resizeStage(){
+      // stage 높이는 CSS calc(100dvh - ...)로 처리하지만,
+      // 일부 브라우저에서 주소창 표출/회전 시 보정이 필요할 수 있음.
+      // 필요시 강제 리플로우:
+      const st = document.querySelector('.stage');
+      st.style.height = 'calc(100dvh - var(--head-h) - var(--tab-h) - var(--safe-bottom))';
+    }
+
+    // 탭 클릭 이벤트
+    $tabs.forEach(tab=>{
+      tab.addEventListener('click', ()=>{
+        const key = tab.dataset.target;
+        activateTab(key);
+        loadPage(key);
+      });
+    });
+
+    // 해시/회전 대응
+    window.addEventListener('hashchange', ()=>{
+      const key = hashToKey();
+      activateTab(key);
+      loadPage(key, /*pushHash*/false);
+    });
+    window.addEventListener('resize', resizeStage);
+    window.addEventListener('orientationchange', ()=>{
+      setTimeout(resizeStage, 250);
+    });
+
+    // 초기 진입
+    (function init(){
+      resizeStage();
+      const key = hashToKey();
+      activateTab(key);
+      loadPage(key, false);
+    })();
+  </script>
+</body>
+</html>
