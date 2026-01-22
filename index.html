@@ -497,7 +497,7 @@
                 <i class="fas fa-tshirt"></i> 의류
             </div>
             <div class="tab-link" id="tab-shoes" onclick="showCategory('shoes')">
-                <i class="fas fa-shoe-prints"></i> 신발
+                <i class="fas fa-shoe-prints"></i> 신발 <span style="color: #f72585; font-size: 0.8rem;">(품절)</span>
             </div>
         </div>
         
@@ -621,7 +621,7 @@
             });
         }
         
-        // 3. 카테고리 보여주기 (동일)
+        // 3. 카테고리 보여주기
         function showCategory(categoryName) {
             document.getElementById('tab-clothing').classList.remove('active');
             document.getElementById('tab-shoes').classList.remove('active');
@@ -631,7 +631,15 @@
                 renderProducts(clothingProducts);
             } else {
                 document.getElementById('tab-shoes').classList.add('active');
-                renderProducts(shoesProducts);
+                // 신발 품절 처리
+                const container = document.getElementById("products-grid");
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-shoe-prints" style="font-size: 4rem; color: #ccc; margin-bottom: 20px;"></i>
+                        <h3 style="color: #666; margin-bottom: 10px;">신발 전 품목 품절</h3>
+                        <p style="color: #999;">현재 신발 상품은 모두 품절되었습니다.<br>빠른 시일 내에 재입고 예정입니다.</p>
+                    </div>
+                `;
             }
         }
 
